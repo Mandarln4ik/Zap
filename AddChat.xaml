@@ -1,0 +1,61 @@
+﻿<Window x:Class="Zap.AddChat"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Zap"
+        mc:Ignorable="d"
+        Title="Добавить чат" Height="160" Width="300" FontFamily="Arial"
+        >
+    <Grid Background="#FF333333">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <Border Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Label Content="IP адресс:" Foreground="White" FontFamily="Arial" VerticalAlignment="Center"/>
+                <TextBox Name="IPTextBox" Grid.Column="1"  BorderBrush="#FF444444" Background="Gray"
+                         Margin="0,5,20,5"/>
+                <TextBlock Name="IPInfo" Grid.Row="1" Grid.ColumnSpan="2"
+                           Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+        </Border>
+        
+        <Border Grid.Row="1" Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Label Content="Порт" Foreground="White" FontFamily="Arial" VerticalAlignment="Center"/>
+                <TextBox Name="PortTextBox" Grid.Column="1"  BorderBrush="#FF444444" Background="Gray"
+                 Margin="0,5,20,5"/>
+                <TextBlock Name="PortInfo" Grid.Row="1" Grid.ColumnSpan="2"
+                   Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <Border>
+            
+        </Border>
+    </Grid>
+</Window>
