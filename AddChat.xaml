@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Zap"
         mc:Ignorable="d"
-        Title="Добавить чат" Height="160" Width="300" FontFamily="Arial"
+        Height="150" Width="300" FontFamily="Arial" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" WindowStyle="None"
         >
     <Grid Background="#FF333333">
         <Grid.RowDefinitions>
             <RowDefinition Height="60"/>
             <RowDefinition Height="60"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
         
         <Border Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
@@ -55,8 +55,18 @@
         </Border>
 
         <Border Grid.Row="2" Background="Transparent">
-            <Button Background="#FF444444" Content="Добавить" Foreground="White"
-                Style="{StaticResource TopButtonTemplate}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Background="#FF444444" Content="Отмена" Foreground="White"
+                Style="{StaticResource TopButtonTemplate}" Click="Cancel_Click" 
+                        BorderThickness="0,0,1,0" BorderBrush="#FF555555"/>
+                <Button Background="#FF444444" Content="Добавить" Foreground="White" Grid.Column="1"
+                Style="{StaticResource TopButtonTemplate}" Click="AddChat_Click"
+                        BorderThickness="1,0,0,0" BorderBrush="#FF555555"/>
+            </Grid>
         </Border>
     </Grid>
 </Window>

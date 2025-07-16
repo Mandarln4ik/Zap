@@ -7,7 +7,7 @@
         xmlns:taskbar="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
         Height="720" Width="1280" ResizeMode="NoResize" Title="Zap" 
-        Icon="pack://application:,,,/Images/logo1.ico" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" Closing="Window_Closing">
+        Icon="pack://application:,,,/Images/logo1.ico" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" Closing="Window_Closing" Loaded="Window_Loaded">
 
 
     <!-- Закругление окна -->
@@ -38,15 +38,41 @@
             <Grid>
 
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="80"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Background="Transparent" VerticalAlignment="Center"
+                <Border Background="Transparent" VerticalAlignment="Center" Grid.Column="1"
                         HorizontalAlignment="Center" BorderThickness="0">
-                    <TextBlock Text="ZAP" Foreground="White" FontFamily="Calibri" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Z" Foreground="White" FontFamily="Calibri" FontSize="28" Margin="0,0,1,0"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="0"/>
+                        <TextBlock Text="AP" Foreground="#FFD8A800" FontFamily="Calibri" FontSize="28"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1"/>
+                    </Grid>
                 </Border>
-                
+                <Button VerticalAlignment="Center" Grid.Column="2" HorizontalAlignment="Center" Height="30"
+                        BorderThickness="0" Style="{StaticResource TopButtonTemplate}" Click="MyIP_Click">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" Grid.Column="0" 
+                               Text="Ваш айпи"/>
+                        <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" Grid.Column="1" Margin="5,0,0,0"
+                               Name="MyIPlabel"/>
+                    </Grid>
+                </Button>
+
                 <Button Name="WindowCloseBtn" VerticalAlignment="Center" Height="30" Width="40"
                     HorizontalAlignment="Right" Grid.Column="100" 
                     BorderBrush="Transparent"  BorderThickness="0" Click="WindowCloseBtn_Click"
@@ -60,6 +86,11 @@
                     Style="{StaticResource TopButtonTemplate}">
 
                     <Image Source="pack://application:,,,/Images/remove.png" Height="15" Width="15"/>
+                </Button>
+
+                <Button BorderThickness="0" 
+                        Click="SettingsButton_Click" Style="{StaticResource TopButtonTemplate}">
+                    <Image Source="pack://application:,,,/Images/setting.png" Margin="5"/>
                 </Button>
             </Grid>
         </Border>
@@ -98,10 +129,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Добавить чат -->
-                        <Button BorderThickness="0,0,0,1" BorderBrush="#FF444444" 
-                                Content="Добавить чат" Foreground="White" FontFamily="Arial" FontSize="18"
-                                Style="{StaticResource TopButtonTemplate}"/>
+                        
 
                         <Border Grid.RowSpan="2" Grid.Column="2" BorderBrush="#FF444444" BorderThickness="1,0,0,0">
                             <ToggleButton x:Name="LeftMenuBtn"  Background="Transparent" BorderBrush="Transparent"
@@ -111,21 +139,61 @@
                         </Border>
 
                         <!-- Содержимое -->
-                        <Grid Grid.Column="0">
+                        <Grid Grid.Column="0" VerticalAlignment="Stretch" Grid.RowSpan="3">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="30"/>
-                                <!-- Панелька с кнопочками -->
-                                <RowDefinition Height="2*"/>
-                                <!-- Недавние чаты -->
-                                <RowDefinition Height="2*"/>
-                                <!-- Последние -->
+                                <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
                             <!-- Верхняя панель -->
-                            <Border>
-
+                            <Border BorderThickness="0,0,0,1" BorderBrush="#FF444444">
+                                <!-- Добавить чат -->
+                                <Button BorderThickness="0" Content="Добавить чат" Foreground="White"
+                                        FontFamily="Arial" FontSize="18"
+                                        Style="{StaticResource TopButtonTemplate}" Click="AddNewChat_Click"/>
                             </Border>
 
+                            <ListView Name="ChatsListView" Grid.Row="1" Background="Transparent"
+                                      BorderBrush="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Height="50" BorderThickness="0,0,0,1" BorderBrush="#FF444444"
+                                                Style="{StaticResource TopButtonTemplate}">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="30"/>
+                                                    <RowDefinition Height="20"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Label Grid.Row="0" Content="{Binding Name}" Foreground="White" FontSize="16"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" Grid.ColumnSpan="2"/>
+                                                <Label Grid.Row="1" Grid.Column="0" Content="{Binding IP}" Foreground="Black" FontSize="8"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="1" Content="{Binding PORT}" Foreground="Black" FontSize="8"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListViewItem">
+                                                    <ContentPresenter/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
                         </Grid>
                     </Grid>
                 </Border>

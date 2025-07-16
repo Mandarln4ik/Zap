@@ -16,15 +16,14 @@
                                     <Setter Property="Background" Value="Gray"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter Property="Margin" Value="0,2,0,0"/>
+                                <Setter Property="Background" Value="#FF555555"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Margin" Value="0"/>
-            </Style>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
 
         <Style TargetType="ToggleButton" x:Key="MoveToggleButtonTemplate">
             <Setter Property="Template">
