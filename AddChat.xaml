@@ -54,8 +54,9 @@
             </Grid>
         </Border>
 
-        <Border>
-            
+        <Border Grid.Row="2" Background="Transparent">
+            <Button Background="#FF444444" Content="Добавить" Foreground="White"
+                Style="{StaticResource TopButtonTemplate}"/>
         </Border>
     </Grid>
 </Window>
