@@ -1,6 +1,5 @@
 # Zap - P2P Chat Messenger
-<img width="128" height="128" alt="logo1" src="https://github.com/user-attachments/assets/f6d5038c-3d2a-4193-a616-c25009cac782" />
-
+<img width="128" height="128" alt="logo1" src="https://github.com/user-attachments/assets/9cbd1bd5-dd9e-4dbe-a49b-7020942fb0c8" />
 
 -- Translate powered by Google - Eng
 
