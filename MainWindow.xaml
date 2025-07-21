@@ -96,7 +96,7 @@
         </Border>
 
         <!-- Основное окно -->
-        <Grid Grid.Row="1" Background="Beige">
+        <Grid Grid.Row="1" Background="#FF555555">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition>
                     <ColumnDefinition.Style>
@@ -153,13 +153,15 @@
                                         Style="{StaticResource TopButtonTemplate}" Click="AddNewChat_Click"/>
                             </Border>
 
+                            
+                            <!-- Список чатов -->
                             <ListView Name="ChatsListView" Grid.Row="1" Background="Transparent"
                                       BorderBrush="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
                                         <Button Height="50" BorderThickness="0,0,0,1" BorderBrush="#FF444444"
-                                                Style="{StaticResource TopButtonTemplate}">
-                                            <Grid>
+                                                Style="{StaticResource TopButtonTemplate}" Click="SelectChat_Click">
+                                            <Grid Width="398">
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="30"/>
                                                     <RowDefinition Height="20"/>
@@ -167,15 +169,33 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="5"/>
                                                 </Grid.ColumnDefinitions>
 
                                                 <Label Grid.Row="0" Content="{Binding Name}" Foreground="White" FontSize="16"
                                                        VerticalAlignment="Center" HorizontalAlignment="Center" Grid.ColumnSpan="2"/>
                                                 <Label Grid.Row="1" Grid.Column="0" Content="{Binding IP}" Foreground="Black" FontSize="8"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                       VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                                 <Label Grid.Row="1" Grid.Column="1" Content="{Binding PORT}" Foreground="Black" FontSize="8"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                       VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                                <Border Grid.RowSpan="2" Grid.Column="2" BorderThickness="0" HorizontalAlignment="Right" Width="5">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="OrangeRed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding isConnected}" Value="true">
+                                                                    <Setter Property="Background" Value="ForestGreen"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
                                             </Grid>
+                                            <Button.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Удалить" Click="DeleteChat_Click"/>
+                                                </ContextMenu>    
+                                            </Button.ContextMenu>
                                         </Button>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
@@ -206,15 +226,85 @@
                     <RowDefinition Height="80"/>
                 </Grid.RowDefinitions>
 
+                <!-- Диалог -->
+                <Grid>
+                    <ListBox x:Name="MessagesList" ItemsSource="{Binding CurrentChat.Messages}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Border для каждого сообщения -->
+                                <Border CornerRadius="10" 
+                                        Padding="10"
+                                        Margin="5"
+                                        Background="#FF333333"
+                                        BorderBrush="#FF555555"
+                                        BorderThickness="1">
+                                    <TextBlock Text="{Binding Text}" 
+                                               TextWrapping="Wrap"
+                                               Foreground="White"
+                                               FontSize="14"
+                                               MaxWidth="300"/>
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMyMessage}" Value="false">
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+
+                        <!-- Стиль для самого ListBox -->
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+
+                        <!-- Отключаем стандартное выделение -->
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter/>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+
+                </Grid>
+
                 <!-- Ввод текста -->
-                <Border Grid.Row="1" BorderThickness="1" BorderBrush="#FF333333"
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="40"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Border Grid.Column="0" BorderThickness="1" BorderBrush="#FF333333"
                     Margin="10,0,10,10" CornerRadius="10">
-                    <Grid Margin="10,5,10,5">
-                        <TextBox Name="TextBox" Text="Какая сегодня погода?" Foreground="Gray" BorderThickness="0" TextWrapping="Wrap"
+                        <Grid Margin="10,5,10,5">
+                            <TextBox Name="TextBox" Text="Какая сегодня погода?" Foreground="Gray" BorderThickness="0" TextWrapping="Wrap"
                              Background="Transparent" BorderBrush="Transparent" GotFocus="TextBox_GotFocus">
-                        </TextBox>
-                    </Grid>
-                </Border>
+                            </TextBox>
+                        </Grid>
+                    </Border>
+
+                    <Button Grid.Column="1" Height="40" Background="Transparent" BorderThickness="0"
+                            Click="SendMessage">
+                        <Image Source="pack://application:,,,/Images/up-arrow.png" Margin="5"/>
+                    </Button>
+                </Grid>
             </Grid>
 
         </Grid>

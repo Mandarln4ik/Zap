@@ -8,6 +8,7 @@ namespace Zap
         public AddChat()
         {
             InitializeComponent();
+            PortTextBox.Text = Properties.Settings.Default.PORT.ToString();
         }
 
         private void AddChat_Click(object sender, RoutedEventArgs e)
@@ -56,7 +57,16 @@ namespace Zap
             }
 
             //Все проверки пройдены
-            ChatController.AddChat(ip, port);
+            var chat = MainWindow._repository.Chats.FirstOrDefault(c => c.IP == ip);
+            if (chat != null) { MessageBox.Show("Чат уже существует!"); return; }
+            chat = new Chat
+            {
+                Name = ip,
+                IP = ip,
+                PORT = port,
+                isConnected = false
+            };
+            MainWindow._repository.AddChat(chat);
             Close();
         }
 
