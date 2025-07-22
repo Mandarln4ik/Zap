@@ -1,27 +1,28 @@
 # Zap - P2P Chat Messenger
 <img width="128" height="128" alt="logo1" src="https://github.com/user-attachments/assets/9cbd1bd5-dd9e-4dbe-a49b-7020942fb0c8" />
 
--- Translate powered by Google - Eng
+This application will allow you to communicate at a distance using only the Internet,
+no servers or redirects, using TCP/UDP p2p tunnel with encryption
 
-Plans:
-The plans include creating a convenient lightweight chat messenger without a server part for communication and sending files,
-with the ability to add chats, save chat history on a local computer, convenient management of downloaded files and chats, 
-the ability to "ping" the interlocutor to find out if he is online.
+> [!TIP]
+> If the application could not forward ports through NAT, then try using a different type of network connection. 
+> This also means that no one will be able to connect to you from the outside (for use in a local network, use the local IP of other devices).
+> Even if this did not help you, you should try Port Forwarding on your router
 
-Features:
-- Sending Messages
-- Sending any Files
-- Adding unlimited chats
+**VERSIONS**
+- [v0.0.1-beta](https://github.com/Mandarln4ik/Zap/releases/tag/v0.0.1-beta) (latest)
 
+**libraries:**
+- NetCoreServer
+- Open.Nat
+- NLog
+- NewtonSoft.Json
+- Hardcodet.NotifyIcon.Wpf
 
--- Ru
-
-Планы:
-В планах создать удобный легковесный чат мессенджер без серверной части для общения и отправки файлов, Возможностью добавления чатов,
-сохранение истории чата на локальном компьютере, удобное управление скачанными файлами и чатами, возможность "пингануть" собеседника, 
-чтобы узнать находится ли он в сети.
-
-Возможности:
-- Отправка сообщений
-- Отправка любых файлов
-- Возможность добавления любого количества чатов
+**Features:**
+- [x] Sending Messages
+- [ ] Sending any Files 
+- [x] Adding unlimited chats 
+- [ ] Encryption 
+- [x] UDP/TCP protocol 
+- [x] Saving chats local on computer
