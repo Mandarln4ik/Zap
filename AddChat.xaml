@@ -5,16 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Zap"
         mc:Ignorable="d"
-        Height="150" Width="300" FontFamily="Arial" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" WindowStyle="None"
+        Height="180" Width="300" FontFamily="Arial" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" WindowStyle="None"
         >
     <Grid Background="#FF333333">
         <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="60"/>
             <RowDefinition Height="60"/>
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
-        
-        <Border Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
+
+        <Border Grid.Row="0" Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="Название:" Foreground="White" FontFamily="Arial" VerticalAlignment="Center"/>
+                <TextBox Name="NameBox" Grid.Column="1" Height="20" BorderBrush="#FF444444" Background="Gray"
+                 Margin="0,5,20,5"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="100"/>
@@ -34,7 +47,7 @@
             </Grid>
         </Border>
         
-        <Border Grid.Row="1" Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
+        <Border Grid.Row="2" Background="Transparent" BorderThickness="0,0,0,1" BorderBrush="#FF444444">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="100"/>
@@ -46,7 +59,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Label Content="Порт" Foreground="White" FontFamily="Arial" VerticalAlignment="Center"/>
+                <Label Content="Порт:" Foreground="White" FontFamily="Arial" VerticalAlignment="Center"/>
                 <TextBox Name="PortTextBox" Grid.Column="1"  BorderBrush="#FF444444" Background="Gray"
                  Margin="0,5,20,5"/>
                 <TextBlock Name="PortInfo" Grid.Row="1" Grid.ColumnSpan="2"
@@ -54,7 +67,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" Background="Transparent">
+        <Border Grid.Row="3" Background="Transparent">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

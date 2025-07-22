@@ -28,6 +28,8 @@ namespace Zap.Core
             {
                 Chats.Add(chat);
             }
+
+            SaveData();
         }
 
         public void AddMessage(Message message)
@@ -42,6 +44,8 @@ namespace Zap.Core
                     chat.Messages.Add(message);
                 });
             }
+
+            SaveData();
         }
 
         public ObservableCollection<Message> GetMessagesForChat(string chatIP)
@@ -66,6 +70,8 @@ namespace Zap.Core
             {
                 AllMessages.Remove(message);
             }
+
+            SaveData();
         }
 
         private void LoadData()
@@ -101,18 +107,28 @@ namespace Zap.Core
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading data: {ex.Message}");
+                MainWindow.logger.Error($"Error loading data: {ex.Message}");
             }
+            finally
+            {
+                MainWindow.logger.Info("Repository succesfully loaded!");
+            }
+        }
+
+        public void OfflineAllChats()
+        {
+            foreach (var item in Chats)
+            {
+                item.isConnected = false;
+            }
+
+            SaveData();
         }
 
         public void SaveData()
         {
             try
             {
-                foreach (var item in Chats)
-                {
-                    item.isConnected = false;
-                }
                 // Сохранение чатов
                 var chatsJson = JsonConvert.SerializeObject(Chats.ToList());
                 File.WriteAllText(ChatsFilePath, chatsJson);
@@ -123,7 +139,11 @@ namespace Zap.Core
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error saving data: {ex.Message}");
+                MainWindow.logger.Error($"Error saving data: {ex.Message}");
+            }
+            finally
+            {
+                MainWindow.logger.Info("Repository succesfully saved!");
             }
         }
     }

@@ -7,7 +7,7 @@
         xmlns:taskbar="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
         Height="720" Width="1280" ResizeMode="NoResize" Title="Zap" 
-        Icon="pack://application:,,,/Images/logo1.ico" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" Closing="Window_Closing" Loaded="Window_Loaded">
+        Icon="pack://application:,,,/Images/logo1.ico" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" Closing="Window_Closing" Loaded="Window_Loaded" Closed="Window_Closed">
 
 
     <!-- Закругление окна -->
@@ -34,7 +34,8 @@
         </taskbar:TaskbarIcon>
 
         <!-- Верхняя панель -->
-        <Border x:Name="TopPanel" Grid.Row="0" Background="#FF333333" BorderBrush="#FF444444" BorderThickness="0,0,0,1" MouseLeftButtonDown="TopPanel_MouseLeftButtonDown">
+        <Border x:Name="TopPanel" Grid.Row="0" Background="#FF333333" BorderBrush="#FF444444"
+                BorderThickness="0,0,0,1" MouseLeftButtonDown="TopPanel_MouseLeftButtonDown">
             <Grid>
 
                 <Grid.ColumnDefinitions>
@@ -51,27 +52,56 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Z" Foreground="White" FontFamily="Calibri" FontSize="28" Margin="0,0,1,0"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="0"/>
-                        <TextBlock Text="AP" Foreground="#FFD8A800" FontFamily="Calibri" FontSize="28"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1"/>
+                        <TextBlock Text="Z" Foreground="White" FontFamily="pack://application:,,,/Font/#Brewheat" FontSize="28" Margin="0,0,1,0"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="0" Padding="0,5,0,0"/>
+                        <TextBlock Text="AP" Foreground="#FFD8A800" FontFamily="pack://application:,,,/Font/#Brewheat" FontSize="28"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Padding="0,5,0,0"/>
                     </Grid>
                 </Border>
-                <Button VerticalAlignment="Center" Grid.Column="2" HorizontalAlignment="Center" Height="30"
+                <Grid Grid.Column="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="200"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Button VerticalAlignment="Center" HorizontalAlignment="Left" Height="30"
                         BorderThickness="0" Style="{StaticResource TopButtonTemplate}" Click="MyIP_Click">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
                                VerticalAlignment="Center" Grid.Column="0" 
                                Text="Ваш айпи"/>
-                        <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
+                            <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
                                VerticalAlignment="Center" Grid.Column="1" Margin="5,0,0,0"
                                Name="MyIPlabel"/>
-                    </Grid>
-                </Button>
+                        </Grid>
+                    </Button>
+                    <Border  Grid.Column="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Foreground="White" FontFamily="Calibri" FontSize="18" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" Grid.Column="0" 
+                                       Text="Состояние сервера:"/>
+                            <Border Name="ServerState" Grid.Column="1" Height="15" Width="15">
+                                <Border.Clip>
+                                    <RectangleGeometry Rect="0,0,15,15" RadiusX="10" RadiusY="10"/>
+                                </Border.Clip>
+                                <Border.ToolTip>
+                                    <ToolTip>
+                                        <TextBlock Name="ServerStatePopup"/>
+                                    </ToolTip>
+                                </Border.ToolTip>
+                            </Border>
+                        </Grid>   
+                    </Border>
+                </Grid> 
 
                 <Button Name="WindowCloseBtn" VerticalAlignment="Center" Height="30" Width="40"
                     HorizontalAlignment="Right" Grid.Column="100" 
@@ -103,7 +133,7 @@
                         <Style TargetType="ColumnDefinition">
                             <Setter Property="Width" Value="20"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=LeftMenuBtn}" Value="false">
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=LeftMenuBtn}" Value="true">
                                     <Setter Property="Width" Value="420"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -129,8 +159,6 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        
-
                         <Border Grid.RowSpan="2" Grid.Column="2" BorderBrush="#FF444444" BorderThickness="1,0,0,0">
                             <ToggleButton x:Name="LeftMenuBtn"  Background="Transparent" BorderBrush="Transparent"
                               Style="{StaticResource MoveToggleButtonTemplate}" Click="LeftMenuBtn_Click">
@@ -153,14 +181,16 @@
                                         Style="{StaticResource TopButtonTemplate}" Click="AddNewChat_Click"/>
                             </Border>
 
+
                             
+
                             <!-- Список чатов -->
                             <ListView Name="ChatsListView" Grid.Row="1" Background="Transparent"
                                       BorderBrush="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
                                         <Button Height="50" BorderThickness="0,0,0,1" BorderBrush="#FF444444"
-                                                Style="{StaticResource TopButtonTemplate}" Click="SelectChat_Click">
+                                                Style="{StaticResource TopButtonTemplate}" Click="SelectChat_Click" MouseDoubleClick="Rename">
                                             <Grid Width="398">
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="30"/>
@@ -172,11 +202,11 @@
                                                     <ColumnDefinition Width="5"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <Label Grid.Row="0" Content="{Binding Name}" Foreground="White" FontSize="16"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Center" Grid.ColumnSpan="2"/>
-                                                <Label Grid.Row="1" Grid.Column="0" Content="{Binding IP}" Foreground="Black" FontSize="8"
+                                                <TextBox Name="TB" Grid.Row="0" Text="{Binding Name}" Foreground="White" FontSize="16" Background="Transparent" BorderThickness="0"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" Grid.ColumnSpan="2" IsEnabled="False" KeyDown="TextBox_KeyDown"/>
+                                                <Label Grid.Row="1" Grid.Column="0" Content="{Binding IP}" Foreground="LightGray" FontSize="8"
                                                        VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                                <Label Grid.Row="1" Grid.Column="1" Content="{Binding PORT}" Foreground="Black" FontSize="8"
+                                                <Label Grid.Row="1" Grid.Column="1" Content="{Binding PORT}" Foreground="LightGray" FontSize="8"
                                                        VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                                 <Border Grid.RowSpan="2" Grid.Column="2" BorderThickness="0" HorizontalAlignment="Right" Width="5">
                                                     <Border.Style>
@@ -194,7 +224,7 @@
                                             <Button.ContextMenu>
                                                 <ContextMenu>
                                                     <MenuItem Header="Удалить" Click="DeleteChat_Click"/>
-                                                </ContextMenu>    
+                                                </ContextMenu>
                                             </Button.ContextMenu>
                                         </Button>
                                     </DataTemplate>
@@ -222,12 +252,17 @@
             <!-- Диалог -->
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="80"/>
                 </Grid.RowDefinitions>
 
+                <Border Name="ChatBorder" Grid.Row="0" BorderThickness="1,0,0,1" BorderBrush="#FF444444" Background="#FF333333">
+                    <TextBlock Name="ChatName" VerticalAlignment="Center" HorizontalAlignment="Center" Text="Чат с" Foreground="White"/>
+                </Border>
+                
                 <!-- Диалог -->
-                <Grid>
+                <Grid Grid.Row="1">
                     <ListBox x:Name="MessagesList" ItemsSource="{Binding CurrentChat.Messages}"
                              Background="Transparent"
                              BorderThickness="0"
@@ -285,7 +320,7 @@
                 </Grid>
 
                 <!-- Ввод текста -->
-                <Grid Grid.Row="1">
+                <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="40"/>
@@ -295,7 +330,7 @@
                     Margin="10,0,10,10" CornerRadius="10">
                         <Grid Margin="10,5,10,5">
                             <TextBox Name="TextBox" Text="Какая сегодня погода?" Foreground="Gray" BorderThickness="0" TextWrapping="Wrap"
-                             Background="Transparent" BorderBrush="Transparent" GotFocus="TextBox_GotFocus">
+                             Background="Transparent" BorderBrush="Transparent" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus">
                             </TextBox>
                         </Grid>
                     </Border>

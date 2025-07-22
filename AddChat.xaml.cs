@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using Zap.Core;
 
 namespace Zap
 {
@@ -8,6 +7,7 @@ namespace Zap
         public AddChat()
         {
             InitializeComponent();
+            NameBox.Text = "New chat";
             PortTextBox.Text = Properties.Settings.Default.PORT.ToString();
         }
 
@@ -61,7 +61,7 @@ namespace Zap
             if (chat != null) { MessageBox.Show("Чат уже существует!"); return; }
             chat = new Chat
             {
-                Name = ip,
+                Name = NameBox.Text,
                 IP = ip,
                 PORT = port,
                 isConnected = false
