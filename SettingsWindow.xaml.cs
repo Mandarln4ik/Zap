@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,10 +20,14 @@ namespace Zap
     /// </summary>
     public partial class SettingsWindow : Window
     {
+        public MainWindow MW;
+        bool isWaitRestart = false;
+
         public SettingsWindow()
         {
             InitializeComponent();
         }
+
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
@@ -41,18 +46,31 @@ namespace Zap
                 {
                     if (port != Properties.Settings.Default.PORT)
                     {
-                        MessageBox.Show("Чтобы изменения вступили в силу требуется рестарт", "Изменение порта", MessageBoxButton.OK, MessageBoxImage.Warning);
                         Properties.Settings.Default.PORT = port;
+                        isWaitRestart = true;
                     }
                 }
             }
 
+            
+            if (Properties.Settings.Default.PROTOCOL != ProtocolComboBox.SelectedIndex)
+            {
+                Properties.Settings.Default.PROTOCOL = ProtocolComboBox.SelectedIndex;
+                isWaitRestart = true;
+            }
+
             Properties.Settings.Default.Save();
+            if (isWaitRestart == true)
+            {
+                isWaitRestart = false;
+                MW.RestartServer();
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             PortBox.Text = Properties.Settings.Default.PORT.ToString();
+            ProtocolComboBox.SelectedIndex = Properties.Settings.Default.PROTOCOL;
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Zap.Core
 {
     static class IPMaster
     {
-        public static async Task<string> GetMyIP()
+        public static async Task<string> GetMyIPv4()
         {
             using (var client = new HttpClient())
             {
@@ -21,8 +21,26 @@ namespace Zap.Core
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Ошибка при получении внешнего IP: {ex.Message}");
-                    return "не удалось получить IP";
+                    MainWindow.logger.Error($"Ошибка при получении внешнего IP: {ex.Message}");
+                    return "E";
+                }
+            }
+        }
+
+        public static async Task<string> GetMyIPv6()
+        {
+            using (var client = new HttpClient())
+            {
+                try
+                {
+                    // Запрос к сервису, который возвращает внешний IP-адрес.
+                    string response = await client.GetStringAsync("https://api6.ipify.org");
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    MainWindow.logger.Error($"Ошибка при получении внешнего IP: {ex.Message}");
+                    return "E";
                 }
             }
         }

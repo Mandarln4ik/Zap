@@ -5,5 +5,8 @@
     <Setting Name="PORT" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2918</Value>
     </Setting>
+    <Setting Name="PROTOCOL" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

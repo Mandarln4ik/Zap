@@ -7,6 +7,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Zap.Core;
+using Zap.Core.TCP;
+using Zap.Core.UDP;
 using Brushes = System.Windows.Media.Brushes;
 
 
@@ -16,8 +18,10 @@ namespace Zap
     {
         public static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        private MyTcpServer _server;
-        private MyTcpClient _client;
+        private MyTcpServer _TCPserver;
+        private MyUdpServer _UDPserver;
+        private MyTcpClient _TCPclient;
+        private MyUdpClient _UDPclient;
         public static readonly ChatRepository _repository = new ChatRepository();
         private Chat _currentChat;
         public static Dictionary<Chat, Guid> _sessionsGUID = new();
@@ -33,7 +37,9 @@ namespace Zap
             LeftMenuBtn.IsChecked = true;
             LeftMenuButtonImg.Source = new BitmapImage(new Uri("pack://application:,,,/Images/left-arrow.png"));
             ChatBorder.Visibility = Visibility.Hidden;
-
+            ServerStatePopup.Text = "Сервер выключен";
+            ServerState.Background = Brushes.Red;
+            
             //Привязка массива чатов к UI
             ChatsListView.ItemsSource = _repository.Chats;
             DataContext = this;
@@ -41,9 +47,32 @@ namespace Zap
 
             //Debug
             _repository.AddChat(new Chat { Name = "LocalHost", IP = "127.0.0.1", PORT = Properties.Settings.Default.PORT, isConnected = false });
-            ServerState.Background = Brushes.Red;
-            ServerStatePopup.Text = "Сервер выключен";
             logger.Info("Added localhost chat");
+        }
+
+        private void StartServer()
+        {
+            ServerState.Background = Brushes.DarkOrange;
+            ServerStatePopup.Text = "Сервер запускается";
+
+            int protocol = Properties.Settings.Default.PROTOCOL;
+            if (protocol == 0)
+            {
+                _TCPserver = new MyTcpServer(IPAddress.Any, Properties.Settings.Default.PORT);
+                _TCPserver.Start();
+            }
+            else if (protocol == 1)
+            {
+                _UDPserver = new MyUdpServer(IPAddress.Any, Properties.Settings.Default.PORT);
+                _UDPserver.Start();
+            }
+        }
+
+        public void RestartServer()
+        {
+            _TCPserver?.Dispose();
+            _UDPserver?.Dispose();
+            StartServer();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -62,16 +91,16 @@ namespace Zap
             Topmost = true;
             Topmost = false;
             Taskbar.Visibility = Visibility.Hidden;
-            logger.Info("Zap showed");
+            logger.Info("Zap maximized");
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
             _repository.SaveData();
-            _server?.Dispose();
-            _client?.Dispose();
-            logger.Info("Zap Closed!");
+            _TCPserver?.Dispose();
+            _TCPclient?.Dispose();
+            logger.Info("Zap Closing!");
         }
 
         private void WindowCloseBtn_Click(object sender, RoutedEventArgs e)
@@ -128,16 +157,10 @@ namespace Zap
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             logger.Info("Zap loaded!");
-            MyIPlabel.Text = await IPMaster.GetMyIP();
+            MyIPlabel.Text = await IPMaster.GetMyIPv4();
 
             //start server
-            ServerState.Background = Brushes.DarkOrange;
-            ServerStatePopup.Text = "Сервер запускается..";
-            logger.Info("Server starting..");
-            _server = new MyTcpServer(IPAddress.Any, Properties.Settings.Default.PORT);
-            _server.Start();
-            if (_server.IsStarted) { ServerState.Background = Brushes.Green; ServerStatePopup.Text = "Server active"; logger.Info("Сервер работает!"); }
-
+            StartServer();
         }
 
         private void MyIP_Click(object sender, RoutedEventArgs e)
@@ -150,6 +173,7 @@ namespace Zap
         {
             SettingsWindow window = new SettingsWindow();
             window.Show();
+            window.MW = this;
             logger.Info("Open settings window");
         }
 
@@ -164,19 +188,40 @@ namespace Zap
             };
             _repository.AddMessage(newMessage);
             logger.Info("Message added to messages repository");
-
             TextBox.Clear();
-            if (_sessionsGUID.ContainsKey(_currentChat) && ((IPEndPoint)_server.FindSession(_sessionsGUID[_currentChat]).Socket.RemoteEndPoint).Address.ToString() == _currentChat.IP)
-            { 
-                _server.FindSession(_sessionsGUID[_currentChat]).SendAsync(newMessage.Text); 
-                logger.Info("Message sent as server");
-            }
-            else
+
+            if (Properties.Settings.Default.PROTOCOL == 0) //TCP
             {
-                if (_client != null && _client?.IsConnected == true)
+                if (_sessionsGUID.ContainsKey(_currentChat) && ((IPEndPoint)_TCPserver.FindSession(_sessionsGUID[_currentChat]).Socket.RemoteEndPoint).Address.ToString() == _currentChat.IP)
                 {
-                    _client.Send(newMessage.Text);
-                    logger.Info("Message sent as client");
+                    _TCPserver.FindSession(_sessionsGUID[_currentChat]).SendAsync(newMessage.Text);
+                    logger.Info("Message sent as server");
+                }
+                else
+                {
+                    if (_TCPclient != null && _TCPclient?.IsConnected == true)
+                    {
+                        _TCPclient.Send(newMessage.Text);
+                        logger.Info("Message sent as client");
+                    }
+                }
+            }
+            else if (Properties.Settings.Default.PROTOCOL == 1) //UDP
+            {
+                try
+                {
+                    IPEndPoint ip = new IPEndPoint(IPAddress.Parse(_currentChat.IP), _currentChat.PORT);
+                    _UDPserver.SendAsync(ip, newMessage.Text);
+                    logger.Info($"Message sent as server to {ip.Address}:{ip.Port}");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("Exception at sending msg as server (UDP)");
+                    if (_UDPclient != null && _UDPclient?.IsConnected == true)
+                    {
+                        _UDPclient.Send(newMessage.Text);
+                        logger.Info("Message sent as client");
+                    }
                 }
             }
         }
@@ -184,8 +229,10 @@ namespace Zap
         private void Window_Closed(object sender, EventArgs e)
         {
             logger.Info("--- Zap shutdown ---");
-            _server?.Dispose();
-            _client?.Dispose();
+            _TCPserver?.Dispose();
+            _UDPserver?.Dispose();
+            _TCPclient?.Dispose();
+            _UDPclient?.Dispose();
         }
 
         private void DeleteChat_Click(object sender, RoutedEventArgs e)
@@ -259,18 +306,38 @@ namespace Zap
                 ChatBorder.Visibility = Visibility.Visible;
                 ChatName.Text = $"Чат с {selectedChat.Name}";
                 MessagesList.ItemsSource = _currentChat.Messages;
-                if (_client != null && (_client.IsConnected || _client.IsConnecting)) { _client.DisconnectAsync(); }
-                _client = new MyTcpClient(selectedChat.IP, selectedChat.PORT);
-                if (_client.ConnectAsync() == true) 
-                { 
-                    _repository.Chats[ChatsListView.SelectedIndex].isConnected = true; 
-                    logger.Info($"Try connecting to Server");
+
+                if (Properties.Settings.Default.PROTOCOL == 0)
+                {
+                    if (_TCPclient != null) { _TCPclient.DisconnectAsync(); _TCPclient.Dispose(); }
+                    _TCPclient = new MyTcpClient(selectedChat.IP, selectedChat.PORT);
+                    if (_TCPclient.ConnectAsync() == true)
+                    {
+                        _repository.Chats[ChatsListView.SelectedIndex].isConnected = true;
+                        logger.Info($"Try connecting to Server");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Не удалось подключиться!");
+                        e.Handled = false;
+                        _repository.Chats[ChatsListView.SelectedIndex].isConnected = false;
+                    }
                 }
-                else
-                { 
-                    MessageBox.Show("Не удалось подключиться!");
-                    e.Handled = false;
-                    _repository.Chats[ChatsListView.SelectedIndex].isConnected = false;
+                else if (Properties.Settings.Default.PROTOCOL == 1)
+                {
+                    if (_UDPclient != null) { _UDPclient.Disconnect(); _UDPclient.Dispose(); }
+                    _UDPclient = new MyUdpClient(selectedChat.IP, selectedChat.PORT);
+                    if (_UDPclient.Connect() == true)
+                    {
+                        _repository.Chats[ChatsListView.SelectedIndex].isConnected = true;
+                        logger.Info($"Try connecting to Server");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Не удалось подключиться!");
+                        e.Handled = false;
+                        _repository.Chats[ChatsListView.SelectedIndex].isConnected = false;
+                    }
                 }
             }
         }

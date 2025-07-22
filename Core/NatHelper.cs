@@ -27,8 +27,7 @@ public static class NatHelper
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Ошибка проброса порта: {ex.Message}");
-            MainWindow.logger.Error($"Ошибка проброса порта: {ex.Message}");
+            MainWindow.logger.Error($"Ошибка NAT: {ex.Message}");
 
 
             Window w = Application.Current.MainWindow;

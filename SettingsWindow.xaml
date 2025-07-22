@@ -33,6 +33,22 @@
                          HorizontalAlignment="Center" Background="Transparent"/>
             </Grid>    
         </Border>
+        <Border BorderBrush="#FF333333" BorderThickness="0,0,0,1" Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Протокол:" FontSize="16" FontFamily="Arial" Background="Transparent"
+                   VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Center"/>
+                <ComboBox Name="ProtocolComboBox" Grid.Column="1" Height="20" Width="150" SelectedIndex="0">
+                    <ComboBoxItem Content="TCP"/>
+                    <ComboBoxItem Content="UDP"/>
+                </ComboBox>
+
+            </Grid>
+        </Border>
 
         <Button Name="SaveButton" Grid.Row="10" Content="Сохранить" Background="#FF333333"
                 BorderThickness="0" Foreground="White" Click="SaveButton_Click"/>
