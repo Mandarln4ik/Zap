@@ -12,7 +12,9 @@ model User {
   username      String    @unique
   displayName   String?
   passwordHash  String
+  publicKey     String?   // Для E2EE
   avatarUrl     String?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
