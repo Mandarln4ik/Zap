@@ -5,7 +5,7 @@
 
 set -e
 
-# Проверка на root через команду id (более совместимо чем $EUID)
+# Проверка на root
 if [ "$(id -u)" -ne 0 ]; then
   echo "Пожалуйста, запустите скрипт от root (через sudo)."
   exit 1
@@ -47,12 +47,13 @@ fi
 # Путь установки
 INSTALL_DIR="/home/Zap/messenger"
 mkdir -p "$INSTALL_DIR"
-chown Zap:Zap "$INSTALL_DIR"
+# Исправляем права на случай, если папка была создана от root
+chown -R Zap:Zap "$INSTALL_DIR"
 
 # Переключаемся в директорию установки
 cd "$INSTALL_DIR"
 
-# Клонирование репозитория от имени пользователя Zap
+# Клонирование репозитория
 if [ ! -d ".git" ]; then
     sudo -u Zap git clone https://github.com/Mandarln4ik/Zap.git .
 else
@@ -63,7 +64,10 @@ fi
 # Настройка Backend
 echo "Настройка сервера..."
 cd server
+# Смена прав перед npm install чтобы избежать EACCES
+chown -R Zap:Zap "$INSTALL_DIR/server"
 sudo -u Zap npm install
+sudo -u Zap npm install @prisma/config
 
 # Создание .env если его нет
 if [ ! -f ".env" ]; then
@@ -87,7 +91,7 @@ PORT=5000
 EOF
 fi
 
-# Применение миграций Prisma
+# Применение миграций Prisma (поддержка Prisma 7)
 sudo -u Zap npx prisma db push
 
 # Сборка Backend
@@ -99,7 +103,6 @@ sudo -u Zap pm2 start dist/index.js --name zap-api
 sudo -u Zap pm2 save
 
 # Настройка автозапуска PM2
-# Используем команду напрямую, так как startup возвращает команду для выполнения
 PM2_STARTUP=$(sudo -u Zap pm2 startup systemd -u Zap --hp /home/Zap | grep "sudo env")
 if [ -n "$PM2_STARTUP" ]; then
     eval "$PM2_STARTUP"
@@ -108,6 +111,7 @@ fi
 # Настройка Frontend
 echo "Настройка клиента..."
 cd ../client
+chown -R Zap:Zap "$INSTALL_DIR/client"
 sudo -u Zap npm install
 
 # Создание .env для фронтенда
