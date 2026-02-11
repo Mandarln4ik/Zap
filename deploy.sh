@@ -37,13 +37,16 @@ npm install
 
 # Создание .env если его нет
 if [ ! -f ".env" ]; then
-    echo "Создание .env файла..."
-    read -p "Введите пароль для PostgreSQL: " DB_PASS
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$DB_PASS';" || true
-    sudo -u postgres psql -c "CREATE DATABASE messenger_db;" || true
+    echo "--- Конфигурация базы данных ---"
+    echo "Пожалуйста, убедитесь, что база данных уже создана в PostgreSQL."
+    read -p "Введите имя пользователя БД: " DB_USER
+    read -p "Введите пароль пользователя БД: " DB_PASS
+    read -p "Введите название базы данных: " DB_NAME
+    read -p "Введите хост БД (по умолчанию localhost): " DB_HOST
+    DB_HOST=${DB_HOST:-localhost}
     
     cat <<EOF > .env
-DATABASE_URL="postgresql://Zap:S721hsaqwSf_uanfq!@148.253.208.189:5432/Zap_db?schema=public"
+DATABASE_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST:5432/$DB_NAME?schema=public"
 JWT_ACCESS_SECRET="$(openssl rand -base64 32)"
 JWT_REFRESH_SECRET="$(openssl rand -base64 32)"
 PORT=5000
