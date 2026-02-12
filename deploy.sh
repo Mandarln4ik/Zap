@@ -33,7 +33,7 @@ install_dependencies() {
     log_info "Updating package lists..."
     apt update || log_error "Failed to update package lists."
 
-    log_info "Installing common dependencies: curl, nginx, build-essential, certbot, python3-certbot-nginx..."
+    log_info "Installing common dependencies..."
     apt install -y curl nginx build-essential certbot python3-certbot-nginx || log_error "Failed to install common dependencies."
 
     log_info "Installing Node.js and npm..."
@@ -45,62 +45,48 @@ install_dependencies() {
 
     log_info "Installing PostgreSQL..."
     apt install -y postgresql postgresql-contrib || log_error "Failed to install PostgreSQL."
+    systemctl start postgresql
+    systemctl enable postgresql
 }
 
 configure_postgresql() {
     log_info "Configuring PostgreSQL..."
 
-    # Prompt for DB credentials
-    read -p "Enter PostgreSQL username (default: zap): " input_db_username
-    DB_USERNAME=${input_db_username:-$DB_USERNAME}
-    read -s -p "Enter PostgreSQL password: " input_db_password
-    DB_PASSWORD=${input_db_password:-$DB_PASSWORD}
-    echo
-    read -p "Enter PostgreSQL database name (default: zap_db): " input_db_database
-    DB_DATABASE=${input_db_database:-$DB_DATABASE}
-
-    # Check if user exists, create if not
-    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = '$DB_USERNAME'\"" &>/dev/null; then
+    # Check if user exists
+    USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_user WHERE usename = '$DB_USERNAME'")
+    if [ "$USER_EXISTS" != "1" ]; then
         log_info "Creating PostgreSQL user $DB_USERNAME..."
-        su - postgres -c "createuser -s -d $DB_USERNAME" || log_error "Failed to create PostgreSQL user."
-        su - postgres -c "psql -c \"ALTER USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD'\"" || log_error "Failed to set password for PostgreSQL user."
+        sudo -u postgres psql -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' SUPERUSER;" || log_error "Failed to create user."
     else
-        log_warn "PostgreSQL user $DB_USERNAME already exists. Skipping creation."
+        log_warn "User $DB_USERNAME already exists."
     fi
 
-    # Check if database exists, create if not
-    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'\"" &>/dev/null; then
+    # Check if database exists
+    DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'")
+    if [ "$DB_EXISTS" != "1" ]; then
         log_info "Creating PostgreSQL database $DB_DATABASE..."
-        su - postgres -c "createdb -O $DB_USERNAME $DB_DATABASE" || log_error "Failed to create PostgreSQL database."
-        # Grant permissions for public schema
-        su - postgres -c "psql -d $DB_DATABASE -c \"GRANT ALL ON SCHEMA public TO $DB_USERNAME;\""
+        sudo -u postgres psql -c "CREATE DATABASE $DB_DATABASE OWNER $DB_USERNAME;" || log_error "Failed to create database."
     else
-        log_warn "PostgreSQL database $DB_DATABASE already exists. Skipping creation."
-        # Ensure permissions even if DB exists
-        su - postgres -c "psql -d $DB_DATABASE -c \"GRANT ALL ON SCHEMA public TO $DB_USERNAME;\""
+        log_warn "Database $DB_DATABASE already exists."
     fi
+
+    # Grant permissions
+    log_info "Granting permissions..."
+    sudo -u postgres psql -d "$DB_DATABASE" -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USERNAME;"
+    sudo -u postgres psql -d "$DB_DATABASE" -c "GRANT ALL ON SCHEMA public TO $DB_USERNAME;"
 }
 
 deploy_backend() {
     log_info "Deploying backend..."
-
-    # Navigate to backend directory
     cd zap-backend || log_error "Backend directory not found."
 
-    # Install dependencies
     log_info "Installing backend dependencies..."
-    npm install --legacy-peer-deps || log_error "Failed to install backend dependencies."
+    npm install --legacy-peer-deps || log_error "Failed to install dependencies."
 
-    # Build NestJS app
     log_info "Building backend application..."
-    npm run build || log_error "Failed to build backend application."
+    npm run build || log_error "Failed to build application."
 
-    # Verify build
-    if [ ! -f "dist/src/main.js" ]; then
-        log_error "Build failed: dist/src/main.js not found."
-    fi
-
-    # Setup environment variables for PM2
+    # Environment variables
     cat <<EOF > .env
 PORT=$API_PORT
 DB_HOST=$DB_HOST
@@ -116,45 +102,30 @@ EOF
     
     log_info "Starting backend with PM2..."
     pm2 delete "zap-backend" &>/dev/null
-    PORT=$API_PORT pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
-    pm2 save || log_error "Failed to save PM2 configuration."
-    
+    PORT=$API_PORT pm2 start dist/src/main.js --name "zap-backend"
+    pm2 save
     cd ..
 }
 
 deploy_frontend() {
     log_info "Deploying frontend..."
-
-    # Prompt for Domain
     read -p "Enter your domain name (e.g., example.com): " DOMAIN_NAME
-    if [ -z "$DOMAIN_NAME" ]; then
-        log_error "Domain name is required for HTTPS setup."
-    fi
+    if [ -z "$DOMAIN_NAME" ]; then log_error "Domain name is required."; fi
 
-    # Navigate to frontend directory
     cd zap-frontend || log_error "Frontend directory not found."
+    npm install --legacy-peer-deps || log_error "Failed to install dependencies."
+    
+    REACT_APP_API_URL="https://$DOMAIN_NAME/api" npm run build || log_error "Build failed."
 
-    # Install dependencies
-    log_info "Installing frontend dependencies..."
-    npm install --legacy-peer-deps || log_error "Failed to install frontend dependencies."
-
-    # Build React app
-    log_info "Building frontend application..."
-    REACT_APP_API_URL="https://$DOMAIN_NAME/api" npm run build || log_error "Failed to build frontend application."
-
-    # Configure Nginx
-    log_info "Configuring Nginx for frontend..."
     rm -rf /var/www/zap-frontend
-    cp -r build /var/www/zap-frontend || log_error "Failed to copy frontend build files."
+    cp -r build /var/www/zap-frontend || log_error "Failed to copy build."
 
-    # Create basic HTTP config first for Certbot
     cat <<EOF > /etc/nginx/sites-available/zap-frontend
 server {
     listen 80;
     server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-
     root /var/www/zap-frontend;
-    index index.html index.htm;
+    index index.html;
 
     location / {
         try_files \$uri /index.html;
@@ -171,96 +142,41 @@ server {
 }
 EOF
 
-    # Enable Nginx site
-    ln -sf /etc/nginx/sites-available/zap-frontend /etc/nginx/sites-enabled/zap-frontend || log_error "Failed to enable Nginx site."
+    ln -sf /etc/nginx/sites-available/zap-frontend /etc/nginx/sites-enabled/zap-frontend
     rm -f /etc/nginx/sites-enabled/default
-    rm -f /etc/nginx/sites-enabled/default.conf
+    nginx -t && systemctl restart nginx
 
-    log_info "Testing Nginx configuration..."
-    nginx -t || log_error "Nginx configuration test failed."
-
-    log_info "Restarting Nginx to apply HTTP config..."
-    systemctl restart nginx || log_error "Failed to restart Nginx."
-
-    log_info "Setting up HTTPS with Certbot..."
-    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email --expand || log_warn "Certbot failed. Please check your domain DNS and firewall."
-
-    # Final check and restart
-    nginx -t && systemctl restart nginx || log_error "Final Nginx restart failed."
-    systemctl enable nginx || log_error "Failed to enable Nginx to start on boot."
-    
+    log_info "Setting up HTTPS..."
+    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email --expand
+    systemctl restart nginx
     cd ..
 }
 
-# --- Main Script ---
+# --- Main ---
 check_root
+log_info "Starting Zap Messenger deployment."
 
-log_info "Starting Zap Messenger deployment script."
-
-if [ -n "$1" ]; then
-    case "$1" in
-        "server")
-            log_info "Selected: Deploying Server (DB + API)"
+PS3="Select option: "
+options=("Deploy Server" "Deploy Client" "Deploy All" "Exit")
+select opt in "${options[@]}"
+do
+    case $opt in
+        "Deploy Server")
             install_dependencies
             configure_postgresql
             deploy_backend
-            log_info "Server deployment complete."
-            ;;
-        "client")
-            log_info "Selected: Deploying Client (UI + Nginx)"
+            break ;;
+        "Deploy Client")
             deploy_frontend
-            log_info "Client deployment complete."
-            ;;
-        "all")
-            log_info "Selected: Deploying All (DB + API + UI + Nginx)"
+            break ;;
+        "Deploy All")
             install_dependencies
             configure_postgresql
             deploy_backend
             deploy_frontend
-            log_info "Full deployment complete."
-            ;;
-        *)
-            log_error "Invalid argument: $1. Use 'server', 'client', or 'all'."
-            ;;
+            break ;;
+        "Exit") exit 0 ;;
     esac
-else
-    PS3="Select deployment option: "
-    options=("Deploy_Server (DB + API)" "Deploy_Client (UI + Nginx)" "Deploy_All" "Exit")
-    select opt in "${options[@]}"
-    do
-        case $opt in
-            "Deploy_Server (DB + API)")
-                log_info "Selected: Deploying Server (DB + API)"
-                install_dependencies
-                configure_postgresql
-                deploy_backend
-                log_info "Server deployment complete."
-                break
-                ;;
-            "Deploy_Client (UI + Nginx)")
-                log_info "Selected: Deploying Client (UI + Nginx)"
-                deploy_frontend
-                log_info "Client deployment complete."
-                break
-                ;;
-            "Deploy_All")
-                log_info "Selected: Deploying All (DB + API + UI + Nginx)"
-                install_dependencies
-                configure_postgresql
-                deploy_backend
-                deploy_frontend
-                log_info "Full deployment complete."
-                break
-                ;;
-            "Exit")
-                log_info "Exiting deployment script."
-                exit 0
-                ;;
-            *)
-                log_error "Invalid option $REPLY"
-                ;;
-        esac
-    done
-fi
+done
 
-log_info "Deployment script finished."
+log_info "Done."
