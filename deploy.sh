@@ -141,9 +141,10 @@ deploy_frontend() {
     log_info "Configuring Nginx for frontend..."
     cp -r build /var/www/zap-frontend || log_error "Failed to copy frontend build files."
 
+    # Create basic HTTP config first for Certbot
     cat <<EOF > /etc/nginx/sites-available/zap-frontend
 server {
-    listen $WEB_PORT;
+    listen 80;
     server_name $DOMAIN_NAME www.$DOMAIN_NAME;
 
     root /var/www/zap-frontend;
@@ -157,7 +158,7 @@ server {
         proxy_pass http://localhost:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \"upgrade\";
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
         proxy_cache_bypass \$http_upgrade;
     }
@@ -167,15 +168,20 @@ EOF
     # Enable Nginx site
     ln -sf /etc/nginx/sites-available/zap-frontend /etc/nginx/sites-enabled/zap-frontend || log_error "Failed to enable Nginx site."
     rm -f /etc/nginx/sites-enabled/default # Remove default nginx site
+    rm -f /etc/nginx/sites-enabled/default.conf
 
     log_info "Testing Nginx configuration..."
     nginx -t || log_error "Nginx configuration test failed."
 
+    log_info "Restarting Nginx to apply HTTP config..."
+    systemctl restart nginx || log_error "Failed to restart Nginx."
+
     log_info "Setting up HTTPS with Certbot..."
+    # Certbot will modify /etc/nginx/sites-available/zap-frontend
     certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email || log_warn "Certbot failed. Please check your domain DNS and firewall."
 
-    log_info "Restarting Nginx..."
-    systemctl restart nginx || log_error "Failed to restart Nginx."
+    # Final check and restart
+    nginx -t && systemctl restart nginx || log_error "Final Nginx restart failed."
     systemctl enable nginx || log_error "Failed to enable Nginx to start on boot."
     
     cd ..

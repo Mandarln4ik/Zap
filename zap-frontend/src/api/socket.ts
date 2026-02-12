@@ -3,7 +3,9 @@ import { io, Socket } from 'socket.io-client';
 let socket: Socket;
 
 export const initiateSocketConnection = () => {
-  socket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000');
+  socket = io(process.env.REACT_APP_API_URL || window.location.origin, {
+    path: '/api/socket.io',
+  });
   console.log(`Connecting socket...`);
 };
 
