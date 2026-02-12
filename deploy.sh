@@ -72,8 +72,6 @@ configure_postgresql() {
     if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'\"" &>/dev/null; then
         log_info "Creating PostgreSQL database \'$DB_DATABASE\'..."
         su - postgres -c "createdb -O \"$DB_USERNAME\" \"$DB_DATABASE\"" || log_error "Failed to create PostgreSQL database."
-        # Grant permissions to ensure the user can create tables (necessary for public schema in PG 15+)
-        su - postgres -c "psql -d \"$DB_DATABASE\" -c \"GRANT ALL ON SCHEMA public TO \\\"$DB_USERNAME\\\";\""
     else
         log_warn "PostgreSQL database \'$DB_DATABASE\' already exists. Skipping creation."
     fi
@@ -112,9 +110,7 @@ deploy_backend() {
     
     log_info "Starting backend with PM2..."
     pm2 delete "zap-backend" &>/dev/null
-    # Change port in main.ts if needed or ensure it matches API_PORT
-    # We will pass the port via environment variable
-    PORT=$API_PORT pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
+    pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
     pm2 save || log_error "Failed to save PM2 configuration."
     
     cd ..
@@ -159,7 +155,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://127.0.0.1:$API_PORT/;
+        proxy_pass http://localhost:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -182,7 +178,7 @@ EOF
 
     log_info "Setting up HTTPS with Certbot..."
     # Certbot will modify /etc/nginx/sites-available/zap-frontend
-    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email --expand || log_warn "Certbot failed. Please check your domain DNS and firewall."
+    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email  || log_warn "Certbot failed. Please check your domain DNS and firewall."
 
     # Final check and restart
     nginx -t && systemctl restart nginx || log_error "Final Nginx restart failed."
