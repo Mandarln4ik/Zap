@@ -60,22 +60,22 @@ configure_postgresql() {
     DB_DATABASE=${input_db_database:-$DB_DATABASE}
 
     # Check if user exists, create if not
-    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = \'$DB_USERNAME\'\"" | grep -q 1;
+    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = 
     then
-        log_info "Creating PostgreSQL user 
-        su - postgres -c "createuser -s -d $DB_USERNAME" || log_error "Failed to create PostgreSQL user."
-        su - postgres -c "psql -c \"ALTER USER $DB_USERNAME WITH PASSWORD \'$DB_PASSWORD\'\"" || log_error "Failed to set password for PostgreSQL user."
+        log_info "Creating PostgreSQL user \'$DB_USERNAME\'..."
+        su - postgres -c "createuser -s -d \"$DB_USERNAME\"" || log_error "Failed to create PostgreSQL user."
+        su - postgres -c "psql -c \"ALTER USER \"$DB_USERNAME\" WITH PASSWORD \'\"$DB_PASSWORD\"\'\"" || log_error "Failed to set password for PostgreSQL user."
     else
-        log_warn "PostgreSQL user 
+        log_warn "PostgreSQL user \'$DB_USERNAME\' already exists. Skipping creation."
     fi
 
     # Check if database exists, create if not
-    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = \'$DB_DATABASE\'\"" | grep -q 1;
+    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = 
     then
-        log_info "Creating PostgreSQL database 
-        su - postgres -c "createdb -O $DB_USERNAME $DB_DATABASE" || log_error "Failed to create PostgreSQL database."
+        log_info "Creating PostgreSQL database \'$DB_DATABASE\'..."
+        su - postgres -c "createdb -O \"$DB_USERNAME\" \"$DB_DATABASE\"" || log_error "Failed to create PostgreSQL database."
     else
-        log_warn "PostgreSQL database 
+        log_warn "PostgreSQL database \'$DB_DATABASE\' already exists. Skipping creation."
     fi
 }
 
@@ -147,7 +147,7 @@ server {
         proxy_pass http://localhost:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \'upgrade\';
+        proxy_set_header Connection \"upgrade\";
         proxy_set_header Host \$host;
         proxy_cache_bypass \$http_upgrade;
     }
