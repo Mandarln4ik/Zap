@@ -3,9 +3,9 @@
 # Variables
 DB_HOST="localhost"
 DB_PORT="5432"
-DB_USERNAME="postgres"
-DB_PASSWORD="postgres"
-DB_DATABASE="zap_messenger"
+DB_USERNAME="zap"
+DB_PASSWORD="S721hsaqwSf_uanfq!"
+DB_DATABASE="zap_db"
 API_PORT="3000"
 WEB_PORT="80"
 
