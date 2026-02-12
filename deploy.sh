@@ -62,20 +62,20 @@ configure_postgresql() {
     # Check if user exists, create if not
     if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = \'$DB_USERNAME\'\"" | grep -q 1;
     then
-        log_info "Creating PostgreSQL user '$DB_USERNAME'..."
+        log_info "Creating PostgreSQL user 
         su - postgres -c "createuser -s -d $DB_USERNAME" || log_error "Failed to create PostgreSQL user."
         su - postgres -c "psql -c \"ALTER USER $DB_USERNAME WITH PASSWORD \'$DB_PASSWORD\'\"" || log_error "Failed to set password for PostgreSQL user."
     else
-        log_warn "PostgreSQL user '$DB_USERNAME' already exists. Skipping creation."
+        log_warn "PostgreSQL user 
     fi
 
     # Check if database exists, create if not
     if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = \'$DB_DATABASE\'\"" | grep -q 1;
     then
-        log_info "Creating PostgreSQL database '$DB_DATABASE'..."
+        log_info "Creating PostgreSQL database 
         su - postgres -c "createdb -O $DB_USERNAME $DB_DATABASE" || log_error "Failed to create PostgreSQL database."
     else
-        log_warn "PostgreSQL database '$DB_DATABASE' already exists. Skipping creation."
+        log_warn "PostgreSQL database 
     fi
 }
 
@@ -173,42 +173,70 @@ check_root
 
 log_info "Starting Zap Messenger deployment script."
 
-PS3=\"Select deployment option: \"
-options=("Deploy_Server (DB + API)" "Deploy_Client (UI + Nginx)" "Deploy_All" "Exit")
-select opt in "\${options[@]}"
-do
-    case \$opt in
-        "Deploy_Server (DB + API)")
+if [ -n "$1" ]; then
+    case "$1" in
+        "server")
             log_info "Selected: Deploying Server (DB + API)"
             install_dependencies
             configure_postgresql
             deploy_backend
             log_info "Server deployment complete."
-            break
             ;;
-        "Deploy_Client (UI + Nginx)")
+        "client")
             log_info "Selected: Deploying Client (UI + Nginx)"
             deploy_frontend
             log_info "Client deployment complete."
-            break
             ;;
-        "Deploy_All")
+        "all")
             log_info "Selected: Deploying All (DB + API + UI + Nginx)"
             install_dependencies
             configure_postgresql
             deploy_backend
             deploy_frontend
             log_info "Full deployment complete."
-            break
-            ;;
-        "Exit")
-            log_info "Exiting deployment script."
-            exit 0
             ;;
         *)
-            log_error "Invalid option \$REPLY"
+            log_error "Invalid argument: $1. Use 'server', 'client', or 'all'."
             ;;
     esac
-done
+else
+    PS3="Select deployment option: "
+    options=("Deploy_Server (DB + API)" "Deploy_Client (UI + Nginx)" "Deploy_All" "Exit")
+    select opt in "${options[@]}"
+    do
+        case $opt in
+            "Deploy_Server (DB + API)")
+                log_info "Selected: Deploying Server (DB + API)"
+                install_dependencies
+                configure_postgresql
+                deploy_backend
+                log_info "Server deployment complete."
+                break
+                ;;
+            "Deploy_Client (UI + Nginx)")
+                log_info "Selected: Deploying Client (UI + Nginx)"
+                deploy_frontend
+                log_info "Client deployment complete."
+                break
+                ;;
+            "Deploy_All")
+                log_info "Selected: Deploying All (DB + API + UI + Nginx)"
+                install_dependencies
+                configure_postgresql
+                deploy_backend
+                deploy_frontend
+                log_info "Full deployment complete."
+                break
+                ;;
+            "Exit")
+                log_info "Exiting deployment script."
+                exit 0
+                ;;
+            *)
+                log_error "Invalid option $REPLY"
+                ;;
+        esac
+    done
+fi
 
 log_info "Deployment script finished."
