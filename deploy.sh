@@ -178,7 +178,7 @@ EOF
 
     log_info "Setting up HTTPS with Certbot..."
     # Certbot will modify /etc/nginx/sites-available/zap-frontend
-    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email || log_warn "Certbot failed. Please check your domain DNS and firewall."
+    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email --expand || log_warn "Certbot failed. Please check your domain DNS and firewall."
 
     # Final check and restart
     nginx -t && systemctl restart nginx || log_error "Final Nginx restart failed."
