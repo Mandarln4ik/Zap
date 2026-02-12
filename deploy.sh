@@ -87,7 +87,7 @@ deploy_backend() {
 
     # Install dependencies
     log_info "Installing backend dependencies..."
-    npm install || log_error "Failed to install backend dependencies."
+    npm install --legacy-peer-deps || log_error "Failed to install backend dependencies."
 
     # Build NestJS app
     log_info "Building backend application..."
@@ -120,7 +120,7 @@ deploy_frontend() {
 
     # Install dependencies
     log_info "Installing frontend dependencies..."
-    npm install || log_error "Failed to install frontend dependencies."
+    npm install --legacy-peer-deps || log_error "Failed to install frontend dependencies."
 
     # Build React app
     log_info "Building frontend application..."
