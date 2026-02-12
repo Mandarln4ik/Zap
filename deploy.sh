@@ -72,6 +72,8 @@ configure_postgresql() {
     if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'\"" &>/dev/null; then
         log_info "Creating PostgreSQL database \'$DB_DATABASE\'..."
         su - postgres -c "createdb -O \"$DB_USERNAME\" \"$DB_DATABASE\"" || log_error "Failed to create PostgreSQL database."
+        # Grant permissions to ensure the user can create tables (necessary for public schema in PG 15+)
+        su - postgres -c "psql -d \"$DB_DATABASE\" -c \"GRANT ALL ON SCHEMA public TO \\\"$DB_USERNAME\\\";\""
     else
         log_warn "PostgreSQL database \'$DB_DATABASE\' already exists. Skipping creation."
     fi
