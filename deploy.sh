@@ -60,18 +60,16 @@ configure_postgresql() {
     DB_DATABASE=${input_db_database:-$DB_DATABASE}
 
     # Check if user exists, create if not
-    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = 
-    then
+    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = '$DB_USERNAME'\"" &>/dev/null; then
         log_info "Creating PostgreSQL user \'$DB_USERNAME\'..."
         su - postgres -c "createuser -s -d \"$DB_USERNAME\"" || log_error "Failed to create PostgreSQL user."
-        su - postgres -c "psql -c \"ALTER USER \"$DB_USERNAME\" WITH PASSWORD \'\"$DB_PASSWORD\"\'\"" || log_error "Failed to set password for PostgreSQL user."
+        su - postgres -c "psql -c \"ALTER USER \"$DB_USERNAME\" WITH PASSWORD \'$DB_PASSWORD\'\"" || log_error "Failed to set password for PostgreSQL user."
     else
         log_warn "PostgreSQL user \'$DB_USERNAME\' already exists. Skipping creation."
     fi
 
     # Check if database exists, create if not
-    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = 
-    then
+    if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'\"" &>/dev/null; then
         log_info "Creating PostgreSQL database \'$DB_DATABASE\'..."
         su - postgres -c "createdb -O \"$DB_USERNAME\" \"$DB_DATABASE\"" || log_error "Failed to create PostgreSQL database."
     else
@@ -92,6 +90,11 @@ deploy_backend() {
     # Build NestJS app
     log_info "Building backend application..."
     npm run build || log_error "Failed to build backend application."
+
+    # Verify build
+    if [ ! -f "dist/main.js" ]; then
+        log_error "Build failed: dist/main.js not found."
+    fi
 
     # Setup environment variables for PM2
     echo "PORT=$API_PORT" > .env
