@@ -51,29 +51,33 @@ configure_postgresql() {
     log_info "Configuring PostgreSQL..."
 
     # Prompt for DB credentials
-    read -p "Enter PostgreSQL username (default: postgres): " input_db_username
+    read -p "Enter PostgreSQL username (default: zap): " input_db_username
     DB_USERNAME=${input_db_username:-$DB_USERNAME}
-    read -s -p "Enter PostgreSQL password (default: postgres): " input_db_password
+    read -s -p "Enter PostgreSQL password: " input_db_password
     DB_PASSWORD=${input_db_password:-$DB_PASSWORD}
     echo
-    read -p "Enter PostgreSQL database name (default: zap_messenger): " input_db_database
+    read -p "Enter PostgreSQL database name (default: zap_db): " input_db_database
     DB_DATABASE=${input_db_database:-$DB_DATABASE}
 
     # Check if user exists, create if not
     if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_user WHERE usename = '$DB_USERNAME'\"" &>/dev/null; then
-        log_info "Creating PostgreSQL user \'$DB_USERNAME\'..."
-        su - postgres -c "createuser -s -d \"$DB_USERNAME\"" || log_error "Failed to create PostgreSQL user."
-        su - postgres -c "psql -c \"ALTER USER \"$DB_USERNAME\" WITH PASSWORD \'$DB_PASSWORD\'\"" || log_error "Failed to set password for PostgreSQL user."
+        log_info "Creating PostgreSQL user $DB_USERNAME..."
+        su - postgres -c "createuser -s -d $DB_USERNAME" || log_error "Failed to create PostgreSQL user."
+        su - postgres -c "psql -c \"ALTER USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD'\"" || log_error "Failed to set password for PostgreSQL user."
     else
-        log_warn "PostgreSQL user \'$DB_USERNAME\' already exists. Skipping creation."
+        log_warn "PostgreSQL user $DB_USERNAME already exists. Skipping creation."
     fi
 
     # Check if database exists, create if not
     if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'\"" &>/dev/null; then
-        log_info "Creating PostgreSQL database \'$DB_DATABASE\'..."
-        su - postgres -c "createdb -O \"$DB_USERNAME\" \"$DB_DATABASE\"" || log_error "Failed to create PostgreSQL database."
+        log_info "Creating PostgreSQL database $DB_DATABASE..."
+        su - postgres -c "createdb -O $DB_USERNAME $DB_DATABASE" || log_error "Failed to create PostgreSQL database."
+        # Grant permissions for public schema
+        su - postgres -c "psql -d $DB_DATABASE -c \"GRANT ALL ON SCHEMA public TO $DB_USERNAME;\""
     else
-        log_warn "PostgreSQL database \'$DB_DATABASE\' already exists. Skipping creation."
+        log_warn "PostgreSQL database $DB_DATABASE already exists. Skipping creation."
+        # Ensure permissions even if DB exists
+        su - postgres -c "psql -d $DB_DATABASE -c \"GRANT ALL ON SCHEMA public TO $DB_USERNAME;\""
     fi
 }
 
@@ -97,20 +101,22 @@ deploy_backend() {
     fi
 
     # Setup environment variables for PM2
-    echo "PORT=$API_PORT" > .env
-    echo "DB_HOST=$DB_HOST" >> .env
-    echo "DB_PORT=$DB_PORT" >> .env
-    echo "DB_USERNAME=$DB_USERNAME" >> .env
-    echo "DB_PASSWORD=$DB_PASSWORD" >> .env
-    echo "DB_DATABASE=$DB_DATABASE" >> .env
-    echo "JWT_SECRET=$(head /dev/urandom | tr -dc A-Za-z0-9_ | head -c 64)" >> .env
-    echo "JWT_EXPIRES_IN=1d" >> .env
-    echo "JWT_REFRESH_SECRET=$(head /dev/urandom | tr -dc A-Za-z0-9_ | head -c 64)" >> .env
-    echo "JWT_REFRESH_EXPIRES_IN=7d" >> .env
+    cat <<EOF > .env
+PORT=$API_PORT
+DB_HOST=$DB_HOST
+DB_PORT=$DB_PORT
+DB_USERNAME=$DB_USERNAME
+DB_PASSWORD=$DB_PASSWORD
+DB_DATABASE=$DB_DATABASE
+JWT_SECRET=$(head /dev/urandom | tr -dc A-Za-z0-9_ | head -c 64)
+JWT_EXPIRES_IN=1d
+JWT_REFRESH_SECRET=$(head /dev/urandom | tr -dc A-Za-z0-9_ | head -c 64)
+JWT_REFRESH_EXPIRES_IN=7d
+EOF
     
     log_info "Starting backend with PM2..."
     pm2 delete "zap-backend" &>/dev/null
-    pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
+    PORT=$API_PORT pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
     pm2 save || log_error "Failed to save PM2 configuration."
     
     cd ..
@@ -134,11 +140,11 @@ deploy_frontend() {
 
     # Build React app
     log_info "Building frontend application..."
-    # Set REACT_APP_API_URL during build for production
     REACT_APP_API_URL="https://$DOMAIN_NAME/api" npm run build || log_error "Failed to build frontend application."
 
     # Configure Nginx
     log_info "Configuring Nginx for frontend..."
+    rm -rf /var/www/zap-frontend
     cp -r build /var/www/zap-frontend || log_error "Failed to copy frontend build files."
 
     # Create basic HTTP config first for Certbot
@@ -155,7 +161,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://localhost:$API_PORT/;
+        proxy_pass http://127.0.0.1:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -167,7 +173,7 @@ EOF
 
     # Enable Nginx site
     ln -sf /etc/nginx/sites-available/zap-frontend /etc/nginx/sites-enabled/zap-frontend || log_error "Failed to enable Nginx site."
-    rm -f /etc/nginx/sites-enabled/default # Remove default nginx site
+    rm -f /etc/nginx/sites-enabled/default
     rm -f /etc/nginx/sites-enabled/default.conf
 
     log_info "Testing Nginx configuration..."
@@ -177,8 +183,7 @@ EOF
     systemctl restart nginx || log_error "Failed to restart Nginx."
 
     log_info "Setting up HTTPS with Certbot..."
-    # Certbot will modify /etc/nginx/sites-available/zap-frontend
-    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email  || log_warn "Certbot failed. Please check your domain DNS and firewall."
+    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email --expand || log_warn "Certbot failed. Please check your domain DNS and firewall."
 
     # Final check and restart
     nginx -t && systemctl restart nginx || log_error "Final Nginx restart failed."
