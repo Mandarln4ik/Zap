@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,5 +25,13 @@ export class UserController {
   @Put('profile')
   updateProfile(@Request() req, @Body() updateData: Partial<User>) {
     return this.userService.update(req.user.userId, updateData);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  search(@Query('q') query: string) {
+    if (!query || query.length < 1) return [];
+    const cleanQuery = query.startsWith('@') ? query.substring(1) : query;
+    return this.userService.searchByLogin(cleanQuery);
   }
 }

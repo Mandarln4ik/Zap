@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { Chat, Message, User } from '../types';
 import { sendMessage, joinChat, subscribeToMessages } from '../api/socket';
@@ -11,31 +11,46 @@ import { MessageType } from '../utils/enums';
 const ChatPage: React.FC = () => {
   const { id: chatId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // State to manage visibility on mobile
+  const [isChatVisible, setIsChatVisible] = useState(false);
+
+  useEffect(() => {
+    if (chatId) {
+      setIsChatVisible(true);
+    } else {
+      setIsChatVisible(false);
+    }
+  }, [chatId]);
+
   useEffect(() => {
     const fetchChatData = async () => {
+      if (!chatId) return;
       try {
         const chatResponse = await api.get<Chat>(`/chats/${chatId}`);
         setChat(chatResponse.data);
         const messagesResponse = await api.get<Message[]>(`/chats/${chatId}/messages`);
         setMessages(messagesResponse.data);
 
-        const userProfile = await api.get<User>("/users/profile");
-        setCurrentUser(userProfile.data);
-
-        if (chatId) {
-          joinChat(chatId);
-          subscribeToMessages((err, msg) => {
-            if (msg.chat.id === chatId) {
-              setMessages((prevMessages) => [...prevMessages, msg]);
-            }
-          });
+        let userProfile = JSON.parse(localStorage.getItem("user") || "{}");
+        if (!userProfile || !userProfile.id) {
+          userProfile = (await api.get<User>("/users/profile")).data;
+          localStorage.setItem("user", JSON.stringify(userProfile));
         }
+        setCurrentUser(userProfile);
+
+        joinChat(chatId);
+        subscribeToMessages((err, msg) => {
+          if (msg.chat.id === chatId) {
+            setMessages((prevMessages) => [...prevMessages, msg]);
+          }
+        });
       } catch (error) {
         console.error("Failed to fetch chat data:", error);
       }
@@ -43,11 +58,10 @@ const ChatPage: React.FC = () => {
 
     fetchChatData();
 
-    // Cleanup for socket messages to prevent duplicates
     return () => {
-      // socket.off('newMessage'); // Assuming socket object is available here
+      // Disconnect socket or remove listeners if necessary
     };
-  }, [chatId]);
+  }, [chatId, location.pathname]); // Re-run when chatId or path changes
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,9 +118,9 @@ const ChatPage: React.FC = () => {
   }
 
   return (
-    <div className="chat-page">
+    <div className={`chat-page ${isChatVisible ? "visible-mobile" : ""}`}>
       <header className="chat-header">
-        <button onClick={() => navigate(-1)} className="back-button">
+        <button onClick={() => navigate("/chats")} className="back-button mobile-only">
           <ArrowLeft size={24} />
         </button>
         <h2>{chat.isGroup ? chat.name : chat.participants.find(p => p.id !== currentUser?.id)?.username}</h2>

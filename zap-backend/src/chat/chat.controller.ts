@@ -33,4 +33,9 @@ export class ChatController {
   getChatMessages(@Param('id') id: string) {
     return this.chatService.getChatMessages(id);
   }
+
+  @Post('private/:targetUserId')
+  findOrCreatePrivateChat(@Request() req, @Param('targetUserId') targetUserId: string) {
+    return this.chatService.findOrCreatePrivateChat(req.user.userId, targetUserId);
+  }
 }

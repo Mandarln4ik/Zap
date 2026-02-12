@@ -1,87 +1,162 @@
 .profile-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: #f0f2f5;
-  font-family: Arial, sans-serif;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  flex: 1;
+  overflow-y: auto;
 }
 
 .profile-header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  padding-bottom: 20px;
+  position: relative;
+}
+
+.back-button {
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  padding: 15px 20px;
-  background-color: #007bff;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.profile-header h2 {
-  margin: 0;
-  margin-left: 15px;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.profile-container {
-  flex-grow: 1;
-  display: flex;
   justify-content: center;
-  padding: 20px;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background 0.2s;
 }
 
-.profile-container form {
-  background-color: #ffffff;
+.back-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.profile-info-card {
+  background-color: var(--side-bar-bg);
+  border-radius: 15px;
   padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  max-width: 500px;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
 }
 
-.input-group {
+.profile-avatar-wrapper {
+  position: relative;
   margin-bottom: 20px;
 }
 
-.input-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555555;
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
   font-weight: bold;
-}
-
-.input-group input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #dddddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.save-button {
-  width: 100%;
-  padding: 12px;
-  background-color: #28a745;
   color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 18px;
+  border: 3px solid var(--accent-color);
+}
+
+.edit-avatar-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: var(--accent-color);
+  border-radius: 50%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-top: 20px;
+  border: 2px solid var(--side-bar-bg);
+  transition: background 0.2s;
 }
 
-.save-button:hover {
-  background-color: #218838;
+.edit-avatar-icon:hover {
+  background-color: var(--accent-hover);
 }
 
-.error-message {
-  color: #dc3545;
-  margin-bottom: 15px;
-  font-size: 14px;
+.profile-username {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
 }
 
-.success-message {
-  color: #28a745;
-  margin-bottom: 15px;
-  font-size: 14px;
+.profile-login {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.profile-details {
+  width: 100%;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.edit-profile-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.edit-profile-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 15px;
+  }
+
+  .profile-info-card {
+    padding: 20px;
+  }
+
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+    font-size: 2.5rem;
+  }
+
+  .profile-username {
+    font-size: 1.5rem;
+  }
+
+  .profile-login {
+    font-size: 0.9rem;
+  }
 }

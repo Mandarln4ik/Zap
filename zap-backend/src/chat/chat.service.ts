@@ -70,4 +70,25 @@ export class ChatService {
       order: { createdAt: 'ASC' },
     });
   }
+
+  async findOrCreatePrivateChat(userId: string, targetUserId: string) {
+    // Find existing private chat
+    const chats = await this.chatRepository
+      .createQueryBuilder('chat')
+      .leftJoinAndSelect('chat.participants', 'participant')
+      .where('chat.isGroup = :isGroup', { isGroup: false })
+      .getMany();
+
+    const existingChat = chats.find(chat => 
+      chat.participants.some(p => p.id === userId) && 
+      chat.participants.some(p => p.id === targetUserId)
+    );
+
+    if (existingChat) {
+      return existingChat;
+    }
+
+    // Create new chat
+    return this.createChat([userId, targetUserId], false);
+  }
 }

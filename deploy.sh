@@ -52,13 +52,23 @@ install_dependencies() {
 configure_postgresql() {
     log_info "Configuring PostgreSQL..."
 
+    # Prompt for DB credentials
+    read -p "Enter PostgreSQL username (default: zap): " input_db_username
+    DB_USERNAME=${input_db_username:-$DB_USERNAME}
+    read -s -p "Enter PostgreSQL password (default: current): " input_db_password
+    DB_PASSWORD=${input_db_password:-$DB_PASSWORD}
+    echo
+    read -p "Enter PostgreSQL database name (default: zap_db): " input_db_database
+    DB_DATABASE=${input_db_database:-$DB_DATABASE}
+
     # Check if user exists
     USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_user WHERE usename = '$DB_USERNAME'")
     if [ "$USER_EXISTS" != "1" ]; then
         log_info "Creating PostgreSQL user $DB_USERNAME..."
         sudo -u postgres psql -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD' SUPERUSER;" || log_error "Failed to create user."
     else
-        log_warn "User $DB_USERNAME already exists."
+        log_warn "User $DB_USERNAME already exists. Updating password..."
+        sudo -u postgres psql -c "ALTER USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD';"
     fi
 
     # Check if database exists

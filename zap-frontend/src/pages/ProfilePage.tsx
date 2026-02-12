@@ -1,69 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
-import { User } from "../types";
-import { ArrowLeft } from "lucide-react";
-import "./ProfilePage.css";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+import { User } from '../types';
+import './ProfilePage.css';
+import { ArrowLeft, Camera, Edit } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState("");
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await api.get<User>("/users/profile");
+        const response = await api.get<User>('/users/profile');
         setUser(response.data);
-        setUsername(response.data.username);
-        setLogin(response.data.login);
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-        navigate("/login");
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        // Optionally redirect to login if unauthorized
+        navigate('/login');
       }
     };
     fetchProfile();
   }, [navigate]);
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    if (password && password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    try {
-      const updateData: Partial<User> = { username, login };
-      if (password) {
-        updateData.password = password;
-      }
-
-      await api.put(`/users/profile`, updateData);
-      setSuccess("Profile updated successfully!");
-      setPassword("");
-      setConfirmPassword("");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to update profile");
-    }
-  };
-
-  if (loading) {
-    return <div>Loading profile...</div>;
-  }
-
   if (!user) {
-    return <div>Error loading profile. Please try again.</div>;
+    return <div>Loading profile...</div>;
   }
 
   return (
@@ -72,54 +33,33 @@ const ProfilePage: React.FC = () => {
         <button onClick={() => navigate(-1)} className="back-button">
           <ArrowLeft size={24} />
         </button>
-        <h2>Profile</h2>
       </header>
-      <div className="profile-container">
-        <form onSubmit={handleUpdateProfile}>
-          <div className="input-group">
-            <label htmlFor="username">Username:</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+
+      <div className="profile-info-card">
+        <button className="edit-profile-button">
+          <Edit size={20} />
+        </button>
+        <div className="profile-avatar-wrapper">
+          <div className="profile-avatar">
+            {user.username.charAt(0).toUpperCase()}
           </div>
-          <div className="input-group">
-            <label htmlFor="login">Login (Unique ID):</label>
-            <input
-              type="text"
-              id="login"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              required
-            />
+          <div className="edit-avatar-icon">
+            <Camera size={20} />
           </div>
-          <div className="input-group">
-            <label htmlFor="password">New Password (optional):</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+        </div>
+        <h2 className="profile-username">{user.username}</h2>
+        <p className="profile-login">@{user.login}</p>
+
+        <div className="profile-details">
+          <div className="detail-item">
+            <span className="detail-label">ID</span>
+            <span className="detail-value">{user.id}</span>
           </div>
-          <div className="input-group">
-            <label htmlFor="confirmPassword">Confirm New Password:</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+          <div className="detail-item">
+            <span className="detail-label">Created At</span>
+            <span className="detail-value">{new Date(user.createdAt).toLocaleDateString()}</span>
           </div>
-          {error && <p className="error-message">{error}</p>}
-          {success && <p className="success-message">{success}</p>}
-          <button type="submit" className="save-button">
-            Save Changes
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );

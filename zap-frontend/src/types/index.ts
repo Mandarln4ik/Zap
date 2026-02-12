@@ -4,6 +4,8 @@ export interface User {
   username: string;
   password?: string;
   avatar?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Message {

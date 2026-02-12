@@ -18,6 +18,14 @@ export class UserService {
     });
   }
 
+  async searchByLogin(query: string): Promise<User[]> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where('user.login LIKE :query', { query: `%${query}%` })
+      .limit(10)
+      .getMany();
+  }
+
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
   }
