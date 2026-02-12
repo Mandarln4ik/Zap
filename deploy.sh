@@ -33,8 +33,8 @@ install_dependencies() {
     log_info "Updating package lists..."
     apt update || log_error "Failed to update package lists."
 
-    log_info "Installing common dependencies: curl, nginx, build-essential..."
-    apt install -y curl nginx build-essential || log_error "Failed to install common dependencies."
+    log_info "Installing common dependencies: curl, nginx, build-essential, certbot, python3-certbot-nginx..."
+    apt install -y curl nginx build-essential certbot python3-certbot-nginx || log_error "Failed to install common dependencies."
 
     log_info "Installing Node.js and npm..."
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - || log_error "Failed to add Node.js PPA."
@@ -119,6 +119,12 @@ deploy_backend() {
 deploy_frontend() {
     log_info "Deploying frontend..."
 
+    # Prompt for Domain
+    read -p "Enter your domain name (e.g., example.com): " DOMAIN_NAME
+    if [ -z "$DOMAIN_NAME" ]; then
+        log_error "Domain name is required for HTTPS setup."
+    fi
+
     # Navigate to frontend directory
     cd zap-frontend || log_error "Frontend directory not found."
 
@@ -129,7 +135,7 @@ deploy_frontend() {
     # Build React app
     log_info "Building frontend application..."
     # Set REACT_APP_API_URL during build for production
-    REACT_APP_API_URL="http://localhost:$API_PORT" npm run build || log_error "Failed to build frontend application."
+    REACT_APP_API_URL="https://$DOMAIN_NAME/api" npm run build || log_error "Failed to build frontend application."
 
     # Configure Nginx
     log_info "Configuring Nginx for frontend..."
@@ -138,7 +144,7 @@ deploy_frontend() {
     cat <<EOF > /etc/nginx/sites-available/zap-frontend
 server {
     listen $WEB_PORT;
-    server_name your_domain.com www.your_domain.com; # Change to your domain
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
 
     root /var/www/zap-frontend;
     index index.html index.htm;
@@ -164,6 +170,9 @@ EOF
 
     log_info "Testing Nginx configuration..."
     nginx -t || log_error "Nginx configuration test failed."
+
+    log_info "Setting up HTTPS with Certbot..."
+    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email || log_warn "Certbot failed. Please check your domain DNS and firewall."
 
     log_info "Restarting Nginx..."
     systemctl restart nginx || log_error "Failed to restart Nginx."
