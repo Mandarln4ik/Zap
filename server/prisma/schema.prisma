@@ -72,6 +72,8 @@ model Message {
 
   chat        Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId  String?
+  receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
 
 model PushSubscription {

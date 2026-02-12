@@ -47,7 +47,6 @@ fi
 # Путь установки
 INSTALL_DIR="/home/Zap/messenger"
 mkdir -p "$INSTALL_DIR"
-# Исправляем права на случай, если папка была создана от root
 chown -R Zap:Zap "$INSTALL_DIR"
 
 # Переключаемся в директорию установки
@@ -64,10 +63,9 @@ fi
 # Настройка Backend
 echo "Настройка сервера..."
 cd server
-# Смена прав перед npm install чтобы избежать EACCES
 chown -R Zap:Zap "$INSTALL_DIR/server"
 sudo -u Zap npm install
-sudo -u Zap npm install @prisma/config
+sudo -u Zap npm install @prisma/config dotenv
 
 # Создание .env если его нет
 if [ ! -f ".env" ]; then
@@ -91,7 +89,7 @@ PORT=5000
 EOF
 fi
 
-# Применение миграций Prisma (поддержка Prisma 7)
+# Применение миграций Prisma
 sudo -u Zap npx prisma db push
 
 # Сборка Backend
