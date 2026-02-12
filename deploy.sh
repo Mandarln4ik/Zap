@@ -92,8 +92,8 @@ deploy_backend() {
     npm run build || log_error "Failed to build backend application."
 
     # Verify build
-    if [ ! -f "dist/main.js" ]; then
-        log_error "Build failed: dist/main.js not found."
+    if [ ! -f "dist/src/main.js" ]; then
+        log_error "Build failed: dist/src/main.js not found."
     fi
 
     # Setup environment variables for PM2
@@ -109,7 +109,7 @@ deploy_backend() {
     echo "JWT_REFRESH_EXPIRES_IN=7d" >> .env
     
     log_info "Starting backend with PM2..."
-    pm2 start dist/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
+    pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
     pm2 save || log_error "Failed to save PM2 configuration."
     
     cd ..
