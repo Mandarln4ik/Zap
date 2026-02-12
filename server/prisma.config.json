@@ -1,5 +1,0 @@
-{
-  "datasource": {
-    "url": "env(\"DATABASE_URL\")"
-  }
-}
