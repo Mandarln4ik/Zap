@@ -110,7 +110,9 @@ deploy_backend() {
     
     log_info "Starting backend with PM2..."
     pm2 delete "zap-backend" &>/dev/null
-    pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
+    # Change port in main.ts if needed or ensure it matches API_PORT
+    # We will pass the port via environment variable
+    PORT=$API_PORT pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
     pm2 save || log_error "Failed to save PM2 configuration."
     
     cd ..
@@ -155,7 +157,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://localhost:$API_PORT/;
+        proxy_pass http://127.0.0.1:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
