@@ -20,7 +20,14 @@ export class ChatService {
       isGroup,
       name,
     });
-    return this.chatRepository.save(chat);
+    const savedChat = await this.chatRepository.save(chat);
+    return this.chatRepository.findOne({
+      where: { id: savedChat.id },
+      relations: ["participants", "messages", "messages.sender"],
+      order: {
+        messages: { createdAt: "DESC" },
+      },
+    });
   }
 
   async getUserChats(userId: string) {
