@@ -109,6 +109,7 @@ deploy_backend() {
     echo "JWT_REFRESH_EXPIRES_IN=7d" >> .env
     
     log_info "Starting backend with PM2..."
+    pm2 delete "zap-backend" &>/dev/null
     pm2 start dist/src/main.js --name "zap-backend" --env production || log_error "Failed to start backend with PM2."
     pm2 save || log_error "Failed to save PM2 configuration."
     
