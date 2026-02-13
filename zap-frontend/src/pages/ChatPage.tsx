@@ -12,7 +12,7 @@ const ChatPage: React.FC = () => {
   const { id: chatId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [chat, setChat] = useState<Chat | null>(null);
+  const [chat, setChat] = useState<Chat | null>(location.state?.chat || null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -33,8 +33,10 @@ const ChatPage: React.FC = () => {
     const fetchChatData = async () => {
       if (!chatId) return;
       try {
-        const chatResponse = await api.get<Chat>(`/chats/${chatId}`);
-        setChat(chatResponse.data);
+        if (!chat) {
+          const chatResponse = await api.get<Chat>(`/chats/${chatId}`);
+          setChat(chatResponse.data);
+        }
         const messagesResponse = await api.get<Message[]>(`/chats/${chatId}/messages`);
         setMessages(messagesResponse.data);
 
@@ -55,6 +57,13 @@ const ChatPage: React.FC = () => {
         console.error("Failed to fetch chat data:", error);
       }
     };
+
+    // Если чат уже есть в state, просто устанавливаем его и не делаем лишний запрос
+    if (location.state?.chat) {
+      //setChat(location.state.chat); // уже установлено через useState
+      // Очищаем state, чтобы при обновлении страницы он не использовался повторно
+      window.history.replaceState({}, document.title, location.pathname);
+    }
 
     fetchChatData();
 

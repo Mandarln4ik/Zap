@@ -68,9 +68,9 @@ const ChatListPage: React.FC = () => {
     try {
       const response = await api.post(`/chats/private/${targetUser.id}`);
       const chat = response.data;
-      setSearchQuery('');
+      setSearchQuery("");
       setSearchResults([]);
-      navigate(`/chat/${chat.id}`);
+      navigate(`/chat/${chat.id}`, { state: { chat } }); // Передаем объект чата через state
       fetchChats();
     } catch (error) {
       console.error('Failed to start chat:', error);
